@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaC: Resume as Code</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- CodeMirror for code editing -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+    <!-- KaTeX for LaTeX rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left"></div>
+            <h1>RaC — Resume as Code</h1>
+                <div class="header-actions">
+                    <!-- Toggle switch for theme (clean, compact) -->
+                    <label class="switch" title="Toggle dark mode">
+                        <input id="themeToggleBtn" type="checkbox" aria-label="Toggle dark mode">
+                        <span class="switch-slider"></span>
+                    </label>
+
+                    <button id="downloadPdf" class="btn btn-primary">Download</button>
+                </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Editor Pane -->
+            <div class="editor-pane">
+                <div class="pane-header">
+                    <h2>LaTeX Editor</h2>
+                    <span class="pane-info">Edit your resume in LaTeX</span>
+                </div>
+                <textarea id="latexEditor"></textarea>
+            </div>
+
+            <!-- Divider -->
+            <div class="divider"></div>
+
+            <!-- Preview Pane -->
+            <div class="preview-pane">
+                <div class="pane-header">
+                    <div id="compileStatus" class="compile-status"></div>
+                    <div class="pane-controls">
+                        <label for="primaryColorPicker" style="display:flex; align-items:center; gap:0.5rem; margin-right:0.5rem;">
+                            <input id="primaryColorPicker" type="color" title="Resume accent color">
+                        </label>
+                        <button id="saveRecompileBtn" class="btn btn-primary">Recompile</button>
+                    </div>
+                </div>
+                <div id="preview" class="preview-content"></div>
+                <div id="error" class="error-message"></div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>RaC: Resume as Code | © 2026</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/stex/stex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="js/templates.js?t=1738614687"></script>
+    <script src="js/latex-renderer.js?t=1738614687"></script>
+    <script src="js/app.js?t=1738614687"></script>
+</body>
+</html>
