@@ -119,14 +119,17 @@ function applyTheme(theme) {
     // Keep CodeMirror editor appearance consistent (monokai) in both themes
     setEditorTheme('monokai');
 
-    // If user has no explicit bg override, set the CSS variable to the theme default
+    // Apply Classic preset as default on first visit
     if (!localStorage.getItem('rac_resume_bg')) {
-        const defaultBg = theme === 'dark' ? '#121212' : '#ffffff';
-        document.documentElement.style.setProperty('--resume-bg-color', defaultBg);
+        const classic = COLOR_SCHEMES[0]; // Classic: #ffffff / #4a90e2
+        localStorage.setItem('rac_resume_bg', classic.bg);
+        localStorage.setItem('rac_resume_color', classic.accent);
+        document.documentElement.style.setProperty('--resume-bg-color', classic.bg);
+        applyResumeColor(classic.accent);
         const bgPicker = document.getElementById('resumeBgPicker');
-        if (bgPicker) bgPicker.value = defaultBg;
+        if (bgPicker) bgPicker.value = classic.bg;
         const bgDot = document.getElementById('resumeBgDot');
-        if (bgDot) bgDot.style.background = defaultBg;
+        if (bgDot) bgDot.style.background = classic.bg;
     }
 }
 
