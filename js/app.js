@@ -395,7 +395,10 @@ function downloadPDF() {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Lato:wght@400;700&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4 portrait; margin: 0; }
+  /* margin: 0 !important — removes browser-imposed page margins on Android Chrome.
+     No size: A4 here — specifying size conflicts when device defaults to Letter and
+     can cause the browser to ignore the margin: 0 rule as well. */
+  @page { margin: 0 !important; }
   * {
     box-sizing: border-box;
     -webkit-print-color-adjust: exact !important;
@@ -406,6 +409,17 @@ function downloadPDF() {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important; }
   body { color: ${textMain}; font-family: ${resumeFont}; font-size: 10.5pt; line-height: 1.55; }
+  /* Fixed full-bleed overlay — extends beyond the viewport in all directions so the
+     background colour bleeds into print margins even when @page margin: 0 is ignored */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: -500px;
+    background: ${bg} !important;
+    z-index: -1;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
   /* Padding on the wrapper div (not body) ensures body background fills full page */
   #pdf-wrap { background: ${bg} !important; width: 100%; min-height: 100vh;
     padding: 18mm 20mm 15mm 20mm; }
@@ -435,7 +449,9 @@ function downloadPDF() {
   [style*="font-size: 1.2rem"] { font-size: 11pt !important; color: ${textMain} !important; }
   ul, li { page-break-inside: avoid; break-inside: avoid; }
   .page-break { page-break-after: always !important; break-after: always !important; height: 0; border: none; margin: 0; }
-  .page-break + * { margin-top: 18mm !important; }
+  /* padding-top is more reliable than margin-top at print page boundaries —
+     Chrome collapses/ignores margin-top on the first element of a new page */
+  .page-break + * { padding-top: 18mm !important; margin-top: 0 !important; }
   .page-break::after { display: none !important; }
 </style>
 </head>

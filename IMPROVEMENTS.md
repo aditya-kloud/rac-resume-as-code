@@ -4,6 +4,16 @@ A running log of bugs fixed and features added since the initial release.
 
 ---
 
+## v1.2.3 — PDF Page 2 Top Spacing
+
+### Bug Fixes
+
+**Page 2 missing top margin in PDF**
+- The first element on page 2 (after `\newpage`) rendered with no top spacing because Chrome collapses/ignores `margin-top` on the first element of a new printed page.
+- Fixed by switching from `margin-top: 18mm` to `padding-top: 18mm` on `.page-break + *`, which Chrome honours at page boundaries.
+
+---
+
 ## v1.2.2 — Tablet & PDF Layout Fixes
 
 ### Bug Fixes
@@ -18,7 +28,7 @@ A running log of bugs fixed and features added since the initial release.
 
 **White side margins in PDF on dark colour schemes**
 - Dark-background resumes (Slate, Dark, Violet) showed white strips on the left and right in exported PDFs because Chrome does not reliably paint `background-color` on the body's padding area during print.
-- Fixed by removing padding from `body` in the print stylesheet and moving it to `#pdf-wrap` (a regular `div`). Also added `print-color-adjust: exact !important` explicitly to `html` and `body`.
+- Fixed by removing padding from `body` in the print stylesheet and moving it to `#pdf-wrap` (a regular `div`). Also added `print-color-adjust: exact !important` explicitly to `html` and `body`. Added `body::before` with `position: fixed; inset: -500px` as a full-bleed background fallback for when `@page { margin: 0 }` is ignored. Removed `size: A4` from `@page` to avoid conflicts when the device defaults to Letter.
 
 ---
 
