@@ -119,14 +119,17 @@ function applyTheme(theme) {
     // Keep CodeMirror editor appearance consistent (monokai) in both themes
     setEditorTheme('monokai');
 
-    // If user has no explicit bg override, set the CSS variable to the theme default
+    // Apply Classic preset as default on first visit
     if (!localStorage.getItem('rac_resume_bg')) {
-        const defaultBg = theme === 'dark' ? '#121212' : '#ffffff';
-        document.documentElement.style.setProperty('--resume-bg-color', defaultBg);
+        const classic = COLOR_SCHEMES[0]; // Classic: #ffffff / #4a90e2
+        localStorage.setItem('rac_resume_bg', classic.bg);
+        localStorage.setItem('rac_resume_color', classic.accent);
+        document.documentElement.style.setProperty('--resume-bg-color', classic.bg);
+        applyResumeColor(classic.accent);
         const bgPicker = document.getElementById('resumeBgPicker');
-        if (bgPicker) bgPicker.value = defaultBg;
+        if (bgPicker) bgPicker.value = classic.bg;
         const bgDot = document.getElementById('resumeBgDot');
-        if (bgDot) bgDot.style.background = defaultBg;
+        if (bgDot) bgDot.style.background = classic.bg;
     }
 }
 
@@ -148,6 +151,19 @@ function attachEventListeners() {
     
     // Download PDF button
     document.getElementById('downloadPdf').addEventListener('click', downloadPDF);
+
+    // Clear editor button
+    const clearBtn = document.getElementById('clearEditorBtn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (!confirm('Clear the editor? This cannot be undone.')) return;
+            editor.setValue('');
+            localStorage.removeItem('latexContent');
+            document.getElementById('preview').innerHTML = '';
+            document.getElementById('error').textContent = '';
+        });
+    }
+
 
     // Theme toggle checkbox (change event)
     const themeBtn = document.getElementById('themeToggleBtn');
@@ -425,27 +441,24 @@ function downloadPDF() {
 </body>
 </html>`;
 
-    // Use iframe so mobile browsers don't block it as a popup
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;border:none;opacity:0;pointer-events:none';
-    document.body.appendChild(iframe);
+    // Inject auto-print script and build Blob URL
+    // Blob URL avoids popup-blocking on mobile and document.write issues
+    const printContentWithScript = printContent.replace('</body>', `<script>
+  window.addEventListener('load', function () {
+    setTimeout(function () { window.print(); }, 600);
+  });
+<\/script></body>`);
 
-    const iDoc = iframe.contentDocument || iframe.contentWindow.document;
-    iDoc.open();
-    iDoc.write(printContent);
-    iDoc.close();
+    const blob = new Blob([printContentWithScript], { type: 'text/html; charset=utf-8' });
+    const blobUrl = URL.createObjectURL(blob);
 
-    // Wait for fonts to load then print
-    iframe.contentWindow.addEventListener('load', function () {
-        setTimeout(function () {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-        }, 500);
-    });
+    const printWin = window.open(blobUrl, '_blank');
+    if (!printWin) {
+        // Popup blocked — navigate current tab to the print page instead
+        window.location.href = blobUrl;
+    }
 
-    iframe.contentWindow.addEventListener('afterprint', function () {
-        iframe.remove();
-    });
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
 }
 
 /**
@@ -563,14 +576,17 @@ function initializeColorPresets() {
 
     // Reset everything to defaults
     resetBtn.addEventListener('click', () => {
-        const isDark = document.body.classList.contains('theme-dark');
-        const defaultBg = isDark ? '#121212' : '#ffffff';
+        if (!confirm('Reset everything? This will restore the default template and colour scheme.')) return;
+
+        // Reset colours & font
+        const defaultBg     = '#ffffff';
         const defaultAccent = '#4a90e2';
-        const defaultFont = "Georgia, 'Times New Roman', serif";
+        const defaultFont   = "Georgia, 'Times New Roman', serif";
 
         localStorage.removeItem('rac_resume_bg');
         localStorage.removeItem('rac_resume_color');
         localStorage.removeItem('rac_resume_font');
+        localStorage.removeItem('latexContent');
 
         document.documentElement.style.setProperty('--resume-bg-color', defaultBg);
         document.documentElement.style.setProperty('--resume-font-family', defaultFont);
@@ -583,10 +599,16 @@ function initializeColorPresets() {
         if (bgPicker)     bgPicker.value     = defaultBg;
         if (accentPicker) accentPicker.value = defaultAccent;
         if (fontSelect)   fontSelect.value   = defaultFont;
-        const bgDotR = document.getElementById('resumeBgDot');
+        const bgDotR     = document.getElementById('resumeBgDot');
         const accentDotR = document.getElementById('primaryColorDot');
         if (bgDotR)     bgDotR.style.background     = defaultBg;
         if (accentDotR) accentDotR.style.background = defaultAccent;
+
+        // Reset editor to default template
+        if (TEMPLATES && TEMPLATES.devops) {
+            editor.setValue(TEMPLATES.devops);
+            updatePreview();
+        }
 
         dropdown.classList.remove('open');
     });

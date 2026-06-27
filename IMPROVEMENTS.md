@@ -4,6 +4,31 @@ A running log of bugs fixed and features added since the initial release.
 
 ---
 
+## v1.2.1 — PDF, Presets & Editor Controls
+
+### Bug Fixes
+
+**PDF printing editor UI on mobile**
+- `iframe.contentWindow.print()` falls back to the parent window's print on some browsers, causing the editor UI (pane header, buttons) to appear in the exported PDF.
+- Fixed by switching to a Blob URL approach — prints HTML is built as a `Blob`, opened via `window.open(blobUrl)`, and auto-triggers `window.print()` on load. Only the resume content is in the blob, so the PDF is clean.
+- If `window.open` is blocked, falls back to `window.location.href` (same-tab navigation).
+
+**Presets dropdown not opening on mobile**
+- `position: fixed` + JS-calculated coordinates broke click event propagation on some mobile browsers.
+- Reverted to `position: absolute` with left-anchored positioning on mobile so the dropdown stays within the viewport without breaking interactions.
+
+**Reset not resetting the editor**
+- The Reset button only reset colours and font, leaving the editor content unchanged.
+- Fixed to also restore the default template and clear `latexContent` from localStorage (with confirmation prompt).
+
+### New Features
+
+**Clear button in editor pane**
+- Added a Clear button to the LaTeX editor header.
+- Clears editor content, localStorage, and the preview panel (with confirmation). Separate from Reset — clears content only, does not touch colours or font.
+
+---
+
 ## v1.2.0 — Landing Page, Mobile Fixes & GitHub Actions
 
 ### Bug Fixes
