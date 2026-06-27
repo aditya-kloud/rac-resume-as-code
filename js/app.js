@@ -402,10 +402,13 @@ function downloadPDF() {
     print-color-adjust: exact !important;
     color-adjust: exact !important;
   }
-  html { margin: 0; padding: 0; background: ${bg} !important; }
-  body { margin: 0; padding: 18mm 20mm 15mm 20mm; background: ${bg}; color: ${textMain}; }
-  body { font-family: ${resumeFont}; font-size: 10.5pt; line-height: 1.55; }
-  #pdf-wrap { background: ${bg} !important; width: 100%; }
+  html, body { margin: 0; padding: 0; background: ${bg} !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important; }
+  body { color: ${textMain}; font-family: ${resumeFont}; font-size: 10.5pt; line-height: 1.55; }
+  /* Padding on the wrapper div (not body) ensures body background fills full page */
+  #pdf-wrap { background: ${bg} !important; width: 100%; min-height: 100vh;
+    padding: 18mm 20mm 15mm 20mm; }
   .resume { width: 100%; }
   h1 { font-size: 22pt; font-weight: 700; text-align: center; color: ${textMain} !important; margin-bottom: 4pt; }
   h2 {
