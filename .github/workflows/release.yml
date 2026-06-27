@@ -1,0 +1,99 @@
+name: Auto Release on Merge to Main
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+jobs:
+  release:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: latest_tag
+        run: |
+          TAG=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          if [ -z "$TAG" ]; then
+            TAG="v1.0.0"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Latest tag: $TAG"
+
+      - name: Determine bump type from PR labels
+        id: bump
+        run: |
+          LABELS='${{ toJson(github.event.pull_request.labels.*.name) }}'
+          echo "PR Labels: $LABELS"
+
+          if echo "$LABELS" | grep -qi '"major"'; then
+            echo "type=major" >> $GITHUB_OUTPUT
+          elif echo "$LABELS" | grep -qi '"minor"'; then
+            echo "type=minor" >> $GITHUB_OUTPUT
+          elif echo "$LABELS" | grep -qi '"hotfix"'; then
+            echo "type=hotfix" >> $GITHUB_OUTPUT
+          else
+            echo "type=minor" >> $GITHUB_OUTPUT  # default to minor
+          fi
+
+      - name: Calculate new version
+        id: new_version
+        run: |
+          TAG=${{ steps.latest_tag.outputs.tag }}
+          TYPE=${{ steps.bump.outputs.type }}
+
+          # Strip leading 'v'
+          VERSION=${TAG#v}
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f2)
+          PATCH=$(echo $VERSION | cut -d. -f3)
+
+          if [ "$TYPE" = "major" ]; then
+            MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0
+          elif [ "$TYPE" = "minor" ]; then
+            MINOR=$((MINOR + 1)); PATCH=0
+          elif [ "$TYPE" = "hotfix" ]; then
+            PATCH=$((PATCH + 1))
+          fi
+
+          NEW_VERSION="v$MAJOR.$MINOR.$PATCH"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Update version badge in README
+        run: |
+          NEW_VERSION=${{ steps.new_version.outputs.version }}
+          BARE=${NEW_VERSION#v}
+          sed -i "s/version-[0-9]*\.[0-9]*\.[0-9]*/version-$BARE/" README.md
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --staged --quiet || git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+          git push
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.new_version.outputs.version }}
+          name: RaC ${{ steps.new_version.outputs.version }}
+          body: |
+            ## RaC — Resume as Code ${{ steps.new_version.outputs.version }}
+
+            **Bump type:** `${{ steps.bump.outputs.type }}`
+            **Merged PR:** #${{ github.event.pull_request.number }} — ${{ github.event.pull_request.title }}
+
+            See [IMPROVEMENTS.md](https://github.com/${{ github.repository }}/blob/main/IMPROVEMENTS.md) for the full changelog.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
