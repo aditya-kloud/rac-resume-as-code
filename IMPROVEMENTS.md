@@ -4,6 +4,22 @@ A running log of bugs fixed and features added since the initial release.
 
 ---
 
+## v1.2.4 — Workflow Fix & Docs
+
+### Bug Fixes
+
+**GitHub Actions failing to push version badge to protected branch**
+- The release workflow tried to `git push` a README badge update directly to `main`, which branch protection blocked.
+- Fixed by removing the README badge update step entirely — the release tag and GitHub Release are created without touching `main`.
+
+### Changes
+
+**README** — removed version badge (no longer auto-updated), added Contributing section.
+
+**Landing page** — hero pill changed from "Open Source · MIT License" to "Open Source"; MIT License kept in footer only.
+
+---
+
 ## v1.2.3 — PDF Page 2 Top Spacing
 
 ### Bug Fixes

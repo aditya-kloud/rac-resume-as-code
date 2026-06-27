@@ -70,17 +70,6 @@ jobs:
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "New version: $NEW_VERSION"
 
-      - name: Update version badge in README
-        run: |
-          NEW_VERSION=${{ steps.new_version.outputs.version }}
-          BARE=${NEW_VERSION#v}
-          sed -i "s/version-[0-9]*\.[0-9]*\.[0-9]*/version-$BARE/" README.md
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add README.md
-          git diff --staged --quiet || git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
-          git push
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
