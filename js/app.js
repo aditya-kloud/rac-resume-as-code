@@ -365,20 +365,13 @@ function downloadPDF() {
     const textEm    = dark ? '#c2c2c2' : '#444444';
     const linkColor = dark ? '#90caf9' : resumeColor;
 
-    const printWin = window.open('', '_blank', 'width=900,height=700');
-    if (!printWin) {
-        alert('Pop-up blocked — please allow pop-ups for this site and try again.');
-        return;
-    }
-
     // Fix any relative hrefs that would resolve to file:// paths in the saved PDF.
-    // Relative URLs like "linkedin.com/in/you" need an explicit protocol.
     const resumeHtml = previewEl.innerHTML.replace(
         /href="(?!https?:|mailto:|tel:|ftp:|#|\/\/)([^"]+)"/g,
         'href="https://$1"'
     );
 
-    printWin.document.write(`<!DOCTYPE html>
+    const printContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -386,9 +379,6 @@ function downloadPDF() {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Lato:wght@400;700&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  /* @page margin: 0 so the browser never paints a white gutter around the
-     background colour. Padding is applied to body instead — it flows with the
-     content and the background covers the full physical page. */
   @page { size: A4 portrait; margin: 0; }
   * {
     box-sizing: border-box;
@@ -418,7 +408,6 @@ function downloadPDF() {
   em { font-style: italic; color: ${textEm} !important; }
   u  { text-decoration: underline; }
   .contact-info { text-align: center; color: ${textMuted} !important; font-size: 9.5pt; margin-bottom: 10pt; }
-  /* clearfix for hfill floats — avoids any stacking context that breaks PDF link annotations */
   .resume div::after { content: ''; display: table; clear: both; }
   [style*="float: right"] { float: right; font-style: italic; color: ${textMuted} !important; }
   [style*="text-align: center"] { text-align: center; }
@@ -426,29 +415,37 @@ function downloadPDF() {
   [style*="font-size: 1.5rem"] { font-size: 13pt !important; color: ${textMain} !important; }
   [style*="font-size: 1.2rem"] { font-size: 11pt !important; color: ${textMain} !important; }
   ul, li { page-break-inside: avoid; break-inside: avoid; }
-  /* Page break: force a real page break. The sibling after the break gets
-     18mm top margin so content on the new page isn't flush with the edge
-     (since @page margin is 0 to allow full-bleed background). */
   .page-break { page-break-after: always !important; break-after: always !important; height: 0; border: none; margin: 0; }
   .page-break + * { margin-top: 18mm !important; }
   .page-break::after { display: none !important; }
 </style>
 </head>
 <body>
-<div id="pdf-wrap">
-${resumeHtml}
-</div>
-<script>
-  window.addEventListener('load', function () {
-    setTimeout(function () {
-      window.print();
-      window.addEventListener('afterprint', function () { window.close(); });
-    }, 400);
-  });
-<\/script>
+<div id="pdf-wrap">${resumeHtml}</div>
 </body>
-</html>`);
-    printWin.document.close();
+</html>`;
+
+    // Use iframe so mobile browsers don't block it as a popup
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;border:none;opacity:0;pointer-events:none';
+    document.body.appendChild(iframe);
+
+    const iDoc = iframe.contentDocument || iframe.contentWindow.document;
+    iDoc.open();
+    iDoc.write(printContent);
+    iDoc.close();
+
+    // Wait for fonts to load then print
+    iframe.contentWindow.addEventListener('load', function () {
+        setTimeout(function () {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+        }, 500);
+    });
+
+    iframe.contentWindow.addEventListener('afterprint', function () {
+        iframe.remove();
+    });
 }
 
 /**

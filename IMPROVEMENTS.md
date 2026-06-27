@@ -4,7 +4,29 @@ A running log of bugs fixed and features added since the initial release.
 
 ---
 
-## v1.2.0 — Landing Page & UI Overhaul
+## v1.2.0 — Landing Page, Mobile Fixes & GitHub Actions
+
+### Bug Fixes
+
+**PDF download blocked on mobile**
+- `window.open()` is treated as a popup by mobile browsers (iOS Safari, Android Chrome) and was silently blocked.
+- Fixed by replacing `window.open` + `document.write` with a hidden `<iframe>` injected into the current page. Mobile browsers allow iframe printing without popup permissions.
+
+**Landing page nav overflow on mobile**
+- Nav links (How it works, Commands, Features) were overlapping the logo on small screens.
+- Fixed by hiding text nav links on mobile — only the logo and "Launch Editor →" CTA remain visible.
+
+**Prompt section and command grid not collapsing on mobile**
+- The two-column `prompt-layout` and `cmd-grid` were not stacking on small screens, causing horizontal overflow.
+- Fixed with responsive breakpoints at 860px (single-column stack) and 600px (smaller font sizes).
+
+**Editor pane header wrapping awkwardly on mobile**
+- Compile status chip and Presets/Style/Reset/Recompile buttons were splitting across two misaligned rows.
+- Fixed to stack cleanly: compile status spans full width on the first row, buttons share the second row equally with `flex: 1`.
+
+**Editor panes not scrollable on mobile**
+- Stacked panes had no defined height, causing overflow issues.
+- Fixed with `height: 50vh` per pane and `overflow-y: auto` on the main content area.
 
 ### New Features
 
@@ -24,10 +46,15 @@ A running log of bugs fixed and features added since the initial release.
 - Removed dark mode toggle — UI is always dark, matching the landing page.
 
 **"← Home" link in editor**
-- Header of `app.html` now has a link back to the landing page.
+- Header of `app.html` now links back to the landing page.
 
 **Footer credit**
 - "Made by Aditya Kumar" added to both page footers.
+
+**GitHub Actions release workflow**
+- Auto-creates a GitHub Release on every PR merge to `main`.
+- Bump type (`major`, `minor`, `hotfix`) is read from the PR label.
+- Automatically updates the version badge in `README.md` and commits it back with `[skip ci]`.
 
 ---
 
