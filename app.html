@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaC: Resume as Code — Editor</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- CodeMirror for code editing -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+    <!-- KaTeX for LaTeX rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <!-- Google Fonts — Inter for app chrome + resume font picker -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Lato:wght@400;700&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <a href="index.html" class="header-home-link">← Home</a>
+            </div>
+            <h1>RaC — Resume as Code</h1>
+                <div class="header-actions">
+<button id="downloadPdf" class="btn btn-primary">Download PDF</button>
+                </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Editor Pane -->
+            <div class="editor-pane">
+                <div class="pane-header">
+                    <h2>LaTeX Editor</h2>
+                    <span class="pane-info">Edit your resume in LaTeX</span>
+                </div>
+                <textarea id="latexEditor" autocomplete="off"></textarea>
+            </div>
+
+            <!-- Divider -->
+            <div class="divider"></div>
+
+            <!-- Preview Pane -->
+            <div class="preview-pane">
+                <div class="pane-header">
+                    <div id="compileStatus" class="compile-status"></div>
+                    <div class="pane-controls">
+                        <!-- Colour-scheme presets -->
+                        <div class="presets-wrap" id="presetsWrap">
+                            <button class="btn btn-secondary presets-btn" id="presetsBtn" title="Colour presets">Presets</button>
+                            <div class="presets-dropdown" id="presetsDropdown">
+                                <p class="presets-heading">Colour Schemes</p>
+                                <div class="presets-grid" id="presetsGrid"></div>
+                            </div>
+                        </div>
+                        <!-- Style dropdown (font + colours) -->
+                        <div class="style-wrap" id="styleWrap">
+                            <button class="btn btn-secondary style-btn" id="styleBtn">Style</button>
+                            <div class="style-dropdown" id="styleDropdown">
+                                <p class="style-heading">Font</p>
+                                <select id="resumeFontSelect" class="font-select">
+                                    <option value="Georgia, 'Times New Roman', serif">Georgia</option>
+                                    <option value="'EB Garamond', Garamond, serif">Garamond</option>
+                                    <option value="Merriweather, serif">Merriweather</option>
+                                    <option value="Lato, Arial, sans-serif">Lato</option>
+                                    <option value="Roboto, Arial, sans-serif">Roboto</option>
+                                </select>
+                                <p class="style-heading" style="margin-top:10px">Colours</p>
+                                <label class="style-color-row" title="Background colour">
+                                    <span>Background</span>
+                                    <span class="color-dot" id="resumeBgDot"></span>
+                                    <input id="resumeBgPicker" type="color">
+                                </label>
+                                <label class="style-color-row" title="Accent colour">
+                                    <span>Accent</span>
+                                    <span class="color-dot" id="primaryColorDot"></span>
+                                    <input id="primaryColorPicker" type="color">
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Reset to Classic -->
+                        <button class="btn btn-secondary" id="presetsReset" title="Reset to Classic design">Reset</button>
+                        <button id="saveRecompileBtn" class="btn btn-primary">Recompile</button>
+                    </div>
+                </div>
+                <div id="preview" class="preview-content"></div>
+                <div id="error" class="error-message"></div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>RaC: Resume as Code | © 2026 &nbsp;·&nbsp; Made by Aditya Kumar</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/stex/stex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="js/templates.js?t=1738614687"></script>
+    <script src="js/latex-renderer.js?t=1738614687"></script>
+    <script src="js/app.js?t=1738614687"></script>
+</body>
+</html>

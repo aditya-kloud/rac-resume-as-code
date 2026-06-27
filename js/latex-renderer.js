@@ -89,8 +89,8 @@ class LaTeXRenderer {
         // Parse vspace BEFORE parsing sections (important!)
         bodyContent = bodyContent.replace(/\\vspace\{[^}]+\}/g, '<div style="margin-top: 0.5rem;"></div>');
         
-        // Parse newpage
-        bodyContent = bodyContent.replace(/\\newpage/g, '<div style="page-break-before: always; margin-top: 2rem;"></div>');
+        // Parse newpage / pagebreak → semantic class handled by CSS
+        bodyContent = bodyContent.replace(/\\newpage|\\pagebreak/g, '<div class="page-break"></div>');
         
         // Parse itemize environments - handle \textbf with special chars BEFORE splitting
         // Accept optional arguments to itemize e.g. \begin{itemize}[leftmargin=*, noitemsep]
@@ -99,6 +99,7 @@ class LaTeXRenderer {
             let processedItems = items.replace(/\\%/g, '%');
             processedItems = processedItems.replace(/\\&/g, '&');
             processedItems = processedItems.replace(/\\_/g, '_');
+            processedItems = processedItems.replace(/\\\$/g, '&#36;');
             
             const itemList = processedItems.split(/\\item\s*/)
                 .filter(item => item.trim())
@@ -108,6 +109,9 @@ class LaTeXRenderer {
                     // Parse formatting commands
                     parsed = parsed.replace(/\\textbf\{([^}]+)\}/g, '<strong>$1</strong>');
                     parsed = parsed.replace(/\\textit\{([^}]+)\}/g, '<em>$1</em>');
+                    parsed = parsed.replace(/\\href\{([^}]+)\}\{([^}]+)\}/g, '<a href="$1" target="_blank">$2</a>');
+                    parsed = parsed.replace(/\\underline\{([^}]+)\}/g, '<u>$1</u>');
+                    parsed = parsed.replace(/\\textbackslash\s*([a-zA-Z*]*)/g, (m, cmd) => '&#92;' + cmd);
                     parsed = parsed.replace(/\\[a-zA-Z]+\s*/g, '');
                     parsed = parsed.replace(/\{([^}]*)\}/g, '$1');
                     return `<li>${parsed}</li>`;
@@ -116,9 +120,14 @@ class LaTeXRenderer {
             return `<ul>${itemList}</ul>`;
         });
         
-        // Parse hfill for right-aligned text (both with and without \textit)
-        bodyContent = bodyContent.replace(/\\hfill\s*\\textit\{([^}]+)\}/g, '<span style="float: right; font-style: italic;">$1</span>');
-        // For standalone \hfill with no following text, insert spacing to avoid injecting an unclosed floating span
+        // Lines containing \hfill → flex row so right-hand content aligns to the margin
+        bodyContent = bodyContent.replace(/^([^\n]*?)\\hfill\s*(.*)$/gm, (match, left, right) => {
+            left = left.trim();
+            right = right.replace(/\\\\$/, '').trim(); // strip trailing LaTeX line-break if present
+            if (!right) return left;
+            return `<div style="display:flex;justify-content:space-between;align-items:baseline;">${left}<span>${right}</span></div>`;
+        });
+        // Remaining bare \hfill (inside already-processed environments)
         bodyContent = bodyContent.replace(/\\hfill\s*/g, '&nbsp;&nbsp;&nbsp;');
         
         // Wrap the content
@@ -196,7 +205,10 @@ class LaTeXRenderer {
      */
     parseBlock(content) {
         let html = '';
-        
+
+        // Page breaks
+        content = content.replace(/\\newpage|\\pagebreak/g, '<div class="page-break"></div>');
+
         // Parse contact info
         content = content.replace(/\\contactinfo\{([^}]+)\}/gs, (match, info) => {
             return `<div class="contact-info">${this.parseInline(info)}</div>`;
@@ -247,11 +259,20 @@ class LaTeXRenderer {
         text = text.replace(/\\_/g, '_');
         text = text.replace(/\\%/g, '%');
         text = text.replace(/\\#/g, '#');
-        text = text.replace(/\\\$/g, '$');
+        text = text.replace(/\\\$/g, '&#36;');
         
         // Replace line breaks (handle optional bracketed spacing like \\[4pt] so [4pt] is not left behind)
         text = text.replace(/\\\\\s*(?:\[[^\]]*\])?/g, '<br>');
-        
+
+        // \textbackslash → literal backslash. Use HTML entities so the generic
+        // command stripper below does not re-interpret the resulting \cmd text.
+        // Also preserve any immediately-following command name and brace group
+        // (e.g. \textbackslash vspace{10pt} → \vspace{10pt} as visible text).
+        text = text.replace(/\\textbackslash\s*([a-zA-Z*]*)\s*(\{[^}]*\})?/g, (match, cmd, braces) => {
+            const lb = braces ? braces.replace(/\{/g, '&#123;').replace(/\}/g, '&#125;') : '';
+            return '&#92;' + cmd + lb;
+        });
+
         // Parse textit (italic)
         text = text.replace(/\\textit\{([^}]+)\}/g, '<em>$1</em>');
         
@@ -294,33 +315,29 @@ class LaTeXRenderer {
         if (typeof katex === 'undefined') {
             return html;
         }
-        
-        // Create a temporary div to manipulate
+
         const temp = document.createElement('div');
         temp.innerHTML = html;
-        
+
         try {
-            // Render inline math
-            temp.innerHTML = temp.innerHTML.replace(/\$([^\$]+)\$/g, (match, math) => {
-                try {
-                    return katex.renderToString(math, { throwOnError: false });
-                } catch (e) {
-                    return match;
-                }
+            // [^$<>] prevents the pattern from spanning HTML tag boundaries.
+            // (?!\d) skips dollar signs used as currency (e.g. $500, $1.2M).
+
+            // Display math $$...$$ first
+            temp.innerHTML = temp.innerHTML.replace(/\$\$([^$<>]+)\$\$/g, (match, math) => {
+                try { return katex.renderToString(math, { displayMode: true, throwOnError: false }); }
+                catch (e) { return match; }
             });
-            
-            // Render display math
-            temp.innerHTML = temp.innerHTML.replace(/\$\$([^\$]+)\$\$/g, (match, math) => {
-                try {
-                    return katex.renderToString(math, { displayMode: true, throwOnError: false });
-                } catch (e) {
-                    return match;
-                }
+
+            // Inline math $...$ — never matches currency amounts or cross-tag content
+            temp.innerHTML = temp.innerHTML.replace(/\$(?!\d)([^$<>\n]{1,200})\$/g, (match, math) => {
+                try { return katex.renderToString(math, { throwOnError: false }); }
+                catch (e) { return match; }
             });
         } catch (error) {
             console.error('Math rendering error:', error);
         }
-        
+
         return temp.innerHTML;
     }
 
@@ -329,21 +346,24 @@ class LaTeXRenderer {
      */
     validate(latexContent) {
         const errors = [];
-        
+
+        // Strip comments before counting (same regex used in parseToHTML)
+        const content = latexContent.replace(/(^|[^\\])%.*$/gm, '$1');
+
         // Check for unmatched braces
-        const openBraces = (latexContent.match(/\{/g) || []).length;
-        const closeBraces = (latexContent.match(/\}/g) || []).length;
+        const openBraces = (content.match(/\{/g) || []).length;
+        const closeBraces = (content.match(/\}/g) || []).length;
         if (openBraces !== closeBraces) {
             errors.push('Unmatched braces detected');
         }
-        
+
         // Check for unmatched begin/end
-        const begins = (latexContent.match(/\\begin\{/g) || []).length;
-        const ends = (latexContent.match(/\\end\{/g) || []).length;
+        const begins = (content.match(/\\begin\{/g) || []).length;
+        const ends = (content.match(/\\end\{/g) || []).length;
         if (begins !== ends) {
             errors.push('Unmatched \\begin and \\end statements');
         }
-        
+
         return {
             valid: errors.length === 0,
             errors: errors

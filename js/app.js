@@ -7,15 +7,35 @@ let debounceTimer;
 let isLiveUpdateEnabled = true; // Enabled for auto-compile
 let compileStatusEl;
 
+// Dynamic <style> element that lets user-chosen bg/font override dark-mode CSS
+const _resumeCustomStyle = document.createElement('style');
+document.head.appendChild(_resumeCustomStyle);
+
+// Predefined colour schemes (bg + accent pairs)
+const COLOR_SCHEMES = [
+    { name: 'Classic',  bg: '#ffffff', accent: '#4a90e2' },
+    { name: 'Dark',     bg: '#121212', accent: '#4a90e2' },
+    { name: 'Warm',     bg: '#fdf8f0', accent: '#c8763a' },
+    { name: 'Forest',   bg: '#f0f7f2', accent: '#2d6a4f' },
+    { name: 'Slate',    bg: '#1e2a3a', accent: '#64b5f6' },
+    { name: 'Minimal',  bg: '#ffffff', accent: '#555555' },
+    { name: 'Rose',     bg: '#fff5f5', accent: '#c0392b' },
+    { name: 'Violet',   bg: '#f7f0ff', accent: '#7f5af0' },
+];
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
     compileStatusEl = document.getElementById('compileStatus');
     initializeEditor();
-    initializeThemeToggle(); // setup theme based on preference
-    initializeColorPicker(); // setup primary color picker
+    initializeThemeToggle();    // theme must come first (sets --resume-bg-color default)
+    initializeColorPicker();    // accent color
+    initializeBackgroundPicker();
+    initializeFontSelector();
+    initializeColorPresets();
+    initializeStyleDropdown();
     initializeRenderer();
     attachEventListeners();
-    setupAutoSave(); // Call after editor is initialized
+    setupAutoSave();
     loadDefaultTemplate();
 });
 
@@ -98,6 +118,16 @@ function applyTheme(theme) {
 
     // Keep CodeMirror editor appearance consistent (monokai) in both themes
     setEditorTheme('monokai');
+
+    // If user has no explicit bg override, set the CSS variable to the theme default
+    if (!localStorage.getItem('rac_resume_bg')) {
+        const defaultBg = theme === 'dark' ? '#121212' : '#ffffff';
+        document.documentElement.style.setProperty('--resume-bg-color', defaultBg);
+        const bgPicker = document.getElementById('resumeBgPicker');
+        if (bgPicker) bgPicker.value = defaultBg;
+        const bgDot = document.getElementById('resumeBgDot');
+        if (bgDot) bgDot.style.background = defaultBg;
+    }
 }
 
 /**
@@ -305,71 +335,120 @@ function updatePreview() {
 }
 
 /**
- * Download resume as PDF
+ * Download resume as PDF.
+ * Opens a dedicated print window with clean print-optimised CSS so the browser's
+ * own PDF renderer handles layout — avoids html2canvas clipping.
+ * Respects the active theme: dark mode → dark PDF, light mode → white PDF.
  */
-async function downloadPDF() {
-    const previewElement = document.getElementById('preview');
-    const downloadBtn = document.getElementById('downloadPdf');
-    
-    // Check if there's content to download
-    if (!previewElement.innerHTML.trim() || previewElement.innerHTML.includes('Unable to render')) {
+function downloadPDF() {
+    const previewEl = document.getElementById('preview');
+
+    if (!previewEl.innerHTML.trim() || previewEl.innerHTML.includes('Unable to render')) {
         alert('Please create a valid resume before downloading.');
         return;
     }
-    
-    // Disable button and show loading state
-    downloadBtn.disabled = true;
-    downloadBtn.textContent = 'Generating PDF...';
-    
-        try {
-        // Clone the preview content for PDF generation
-        const element = previewElement.cloneNode(true);
 
-        // Ensure width/box-sizing match A4 so html2canvas/jsPDF paginate consistently
-        element.style.width = '210mm';
-        element.style.boxSizing = 'border-box';
-        element.style.maxWidth = '210mm';
-        element.style.padding = '16mm';
+    const cs = getComputedStyle(document.documentElement);
+    const resumeColor = cs.getPropertyValue('--resume-primary-color').trim() || '#4a90e2';
+    const resumeFont  = cs.getPropertyValue('--resume-font-family').trim()
+                     || "Georgia, 'Times New Roman', serif";
 
-            // Configure PDF options
-            const opt = {
-                margin: [10, 10, 10, 10],
-                filename: 'resume.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: {
-                    scale: 2,
-                    useCORS: true,
-                    letterRendering: true,
-                    allowTaint: false,
-                    logging: false
-                },
-                // Use legacy pagination mode to avoid html2pdf forcing page breaks per element.
-                // Keep pagebreak minimal — legacy mode generally preserves normal flow better.
-                pagebreak: {
-                    mode: ['legacy']
-                },
-                jsPDF: {
-                    unit: 'mm',
-                    format: 'a4',
-                    orientation: 'portrait',
-                    compress: true
-                }
-            };
+    // Effective background: user-saved override takes priority, else theme default
+    const savedBg = localStorage.getItem('rac_resume_bg');
+    const isDark  = document.body.classList.contains('theme-dark');
+    const bg      = savedBg || (isDark ? '#121212' : '#ffffff');
 
-        // Generate PDF
-        await html2pdf().set(opt).from(element).save();
+    // Auto-pick readable text colours based on background luminance
+    const dark = getLuminance(bg) < 0.45;
+    const textMain  = dark ? '#e6e6e6' : '#111111';
+    const textMuted = dark ? '#b0b0b0' : '#555555';
+    const textEm    = dark ? '#c2c2c2' : '#444444';
+    const linkColor = dark ? '#90caf9' : resumeColor;
 
-        // Show success message
-        showNotification('PDF downloaded successfully!', 'success');
-
-    } catch (error) {
-        console.error('PDF generation error:', error);
-        showNotification('Failed to generate PDF: ' + error.message, 'error');
-    } finally {
-        // Re-enable button
-        downloadBtn.disabled = false;
-        downloadBtn.textContent = 'Download PDF';
+    const printWin = window.open('', '_blank', 'width=900,height=700');
+    if (!printWin) {
+        alert('Pop-up blocked — please allow pop-ups for this site and try again.');
+        return;
     }
+
+    // Fix any relative hrefs that would resolve to file:// paths in the saved PDF.
+    // Relative URLs like "linkedin.com/in/you" need an explicit protocol.
+    const resumeHtml = previewEl.innerHTML.replace(
+        /href="(?!https?:|mailto:|tel:|ftp:|#|\/\/)([^"]+)"/g,
+        'href="https://$1"'
+    );
+
+    printWin.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Resume</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Lato:wght@400;700&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* @page margin: 0 so the browser never paints a white gutter around the
+     background colour. Padding is applied to body instead — it flows with the
+     content and the background covers the full physical page. */
+  @page { size: A4 portrait; margin: 0; }
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  html { margin: 0; padding: 0; background: ${bg} !important; }
+  body { margin: 0; padding: 18mm 20mm 15mm 20mm; background: ${bg}; color: ${textMain}; }
+  body { font-family: ${resumeFont}; font-size: 10.5pt; line-height: 1.55; }
+  #pdf-wrap { background: ${bg} !important; width: 100%; }
+  .resume { width: 100%; }
+  h1 { font-size: 22pt; font-weight: 700; text-align: center; color: ${textMain} !important; margin-bottom: 4pt; }
+  h2 {
+    font-size: 13pt; font-weight: 700;
+    color: ${resumeColor} !important;
+    border-bottom: 2px solid ${resumeColor} !important;
+    padding-bottom: 3pt; margin: 14pt 0 6pt;
+    page-break-after: avoid; break-after: avoid;
+  }
+  h3 { font-size: 11pt; font-weight: 700; color: ${textMain} !important; margin: 8pt 0 4pt; page-break-after: avoid; }
+  p  { margin-bottom: 5pt; color: ${textMain} !important; }
+  ul { margin: 0 0 7pt 16pt; }
+  li { margin-bottom: 3pt; color: ${textMain} !important; }
+  a  { color: ${linkColor} !important; text-decoration: none; }
+  strong { font-weight: 700; color: ${textMain} !important; }
+  em { font-style: italic; color: ${textEm} !important; }
+  u  { text-decoration: underline; }
+  .contact-info { text-align: center; color: ${textMuted} !important; font-size: 9.5pt; margin-bottom: 10pt; }
+  /* clearfix for hfill floats — avoids any stacking context that breaks PDF link annotations */
+  .resume div::after { content: ''; display: table; clear: both; }
+  [style*="float: right"] { float: right; font-style: italic; color: ${textMuted} !important; }
+  [style*="text-align: center"] { text-align: center; }
+  [style*="font-size: 2rem"]   { font-size: 18pt !important; color: ${textMain} !important; }
+  [style*="font-size: 1.5rem"] { font-size: 13pt !important; color: ${textMain} !important; }
+  [style*="font-size: 1.2rem"] { font-size: 11pt !important; color: ${textMain} !important; }
+  ul, li { page-break-inside: avoid; break-inside: avoid; }
+  /* Page break: force a real page break. The sibling after the break gets
+     18mm top margin so content on the new page isn't flush with the edge
+     (since @page margin is 0 to allow full-bleed background). */
+  .page-break { page-break-after: always !important; break-after: always !important; height: 0; border: none; margin: 0; }
+  .page-break + * { margin-top: 18mm !important; }
+  .page-break::after { display: none !important; }
+</style>
+</head>
+<body>
+<div id="pdf-wrap">
+${resumeHtml}
+</div>
+<script>
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      window.print();
+      window.addEventListener('afterprint', function () { window.close(); });
+    }, 400);
+  });
+<\/script>
+</body>
+</html>`);
+    printWin.document.close();
 }
 
 /**
@@ -422,6 +501,238 @@ function setupAutoSave() {
 }
 
 /**
+ * Build and wire the colour-scheme presets dropdown.
+ */
+function initializeColorPresets() {
+    const btn      = document.getElementById('presetsBtn');
+    const dropdown = document.getElementById('presetsDropdown');
+    const grid     = document.getElementById('presetsGrid');
+    const resetBtn = document.getElementById('presetsReset');
+    if (!btn || !dropdown || !grid) return;
+
+    // Build one card per scheme
+    COLOR_SCHEMES.forEach(scheme => {
+        const item = document.createElement('div');
+        item.className = 'preset-item';
+        item.title = scheme.name;
+        item.innerHTML = `
+            <div class="preset-swatch">
+                <div class="preset-swatch-half" style="background:${scheme.bg}"></div>
+                <div class="preset-swatch-half" style="background:${scheme.accent}"></div>
+            </div>
+            <span class="preset-name">${scheme.name}</span>`;
+
+        item.addEventListener('click', () => {
+            // Apply background (set storage first so applyTheme won't override it)
+            localStorage.setItem('rac_resume_bg', scheme.bg);
+            document.documentElement.style.setProperty('--resume-bg-color', scheme.bg);
+            const bgPicker = document.getElementById('resumeBgPicker');
+            if (bgPicker) bgPicker.value = scheme.bg;
+            const bgDot2 = document.getElementById('resumeBgDot');
+            if (bgDot2) bgDot2.style.background = scheme.bg;
+
+            // Apply accent
+            localStorage.setItem('rac_resume_color', scheme.accent);
+            applyResumeColor(scheme.accent);
+            const accentPicker = document.getElementById('primaryColorPicker');
+            if (accentPicker) accentPicker.value = scheme.accent;
+            const accentDot2 = document.getElementById('primaryColorDot');
+            if (accentDot2) accentDot2.style.background = scheme.accent;
+
+            // Auto-switch app theme to match the scheme's background brightness
+            const autoTheme = getLuminance(scheme.bg) < 0.45 ? 'dark' : 'light';
+            applyTheme(autoTheme);
+            localStorage.setItem('rac_theme', autoTheme);
+
+            flushResumeCustomStyle();
+            markActivePreset(scheme);
+            dropdown.classList.remove('open');
+        });
+        grid.appendChild(item);
+    });
+
+    // Highlight the currently active scheme on open
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+        if (dropdown.classList.contains('open')) markActivePreset(null);
+        const styleDropdown = document.getElementById('styleDropdown');
+        if (styleDropdown) styleDropdown.classList.remove('open');
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', () => dropdown.classList.remove('open'));
+    dropdown.addEventListener('click', (e) => e.stopPropagation());
+
+    // Reset everything to defaults
+    resetBtn.addEventListener('click', () => {
+        const isDark = document.body.classList.contains('theme-dark');
+        const defaultBg = isDark ? '#121212' : '#ffffff';
+        const defaultAccent = '#4a90e2';
+        const defaultFont = "Georgia, 'Times New Roman', serif";
+
+        localStorage.removeItem('rac_resume_bg');
+        localStorage.removeItem('rac_resume_color');
+        localStorage.removeItem('rac_resume_font');
+
+        document.documentElement.style.setProperty('--resume-bg-color', defaultBg);
+        document.documentElement.style.setProperty('--resume-font-family', defaultFont);
+        applyResumeColor(defaultAccent);
+        flushResumeCustomStyle();
+
+        const bgPicker     = document.getElementById('resumeBgPicker');
+        const accentPicker = document.getElementById('primaryColorPicker');
+        const fontSelect   = document.getElementById('resumeFontSelect');
+        if (bgPicker)     bgPicker.value     = defaultBg;
+        if (accentPicker) accentPicker.value = defaultAccent;
+        if (fontSelect)   fontSelect.value   = defaultFont;
+        const bgDotR = document.getElementById('resumeBgDot');
+        const accentDotR = document.getElementById('primaryColorDot');
+        if (bgDotR)     bgDotR.style.background     = defaultBg;
+        if (accentDotR) accentDotR.style.background = defaultAccent;
+
+        dropdown.classList.remove('open');
+    });
+}
+
+/**
+ * Wire up the Style dropdown toggle (font + colours).
+ */
+function initializeStyleDropdown() {
+    const btn      = document.getElementById('styleBtn');
+    const dropdown = document.getElementById('styleDropdown');
+    if (!btn || !dropdown) return;
+
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+        // Close presets if open
+        const presetsDropdown = document.getElementById('presetsDropdown');
+        if (presetsDropdown) presetsDropdown.classList.remove('open');
+    });
+
+    document.addEventListener('click', () => dropdown.classList.remove('open'));
+    dropdown.addEventListener('click', (e) => e.stopPropagation());
+}
+
+/** Mark the card whose colours match current stored values */
+function markActivePreset(active) {
+    const grid = document.getElementById('presetsGrid');
+    if (!grid) return;
+    const currentBg     = localStorage.getItem('rac_resume_bg')    || '#ffffff';
+    const currentAccent = localStorage.getItem('rac_resume_color') || '#4a90e2';
+    Array.from(grid.children).forEach((card, i) => {
+        const s = COLOR_SCHEMES[i];
+        const match = active
+            ? s === active
+            : s.bg === currentBg && s.accent === currentAccent;
+        card.classList.toggle('active', match);
+    });
+}
+
+/**
+ * Return perceived luminance of a hex colour (0 = black, 1 = white).
+ * Used to auto-pick readable text colours in the PDF based on background.
+ */
+function getLuminance(hex) {
+    hex = (hex || '#ffffff').replace('#', '').trim();
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    const r = parseInt(hex.slice(0, 2), 16) / 255;
+    const g = parseInt(hex.slice(2, 4), 16) / 255;
+    const b = parseInt(hex.slice(4, 6), 16) / 255;
+    return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+/**
+ * Write a dynamic <style> rule so user-chosen bg/font beat the dark-mode CSS rule.
+ */
+function flushResumeCustomStyle() {
+    const bg   = localStorage.getItem('rac_resume_bg');
+    const font = localStorage.getItem('rac_resume_font');
+
+    if (!bg && !font) {
+        _resumeCustomStyle.textContent = '';
+        return;
+    }
+
+    const rules = [];
+    if (bg)   rules.push(`background: ${bg} !important;`);
+    if (font) rules.push(`font-family: ${font} !important;`);
+
+    // When the user has explicitly set a resume background, pin text colours to
+    // match that background regardless of the app's light/dark chrome theme.
+    // Without this, switching app theme removes the dark-mode CSS overrides and
+    // leaves unreadable text on a dark resume background (or vice-versa).
+    let textRules = '';
+    if (bg) {
+        const onDark    = getLuminance(bg) < 0.45;
+        const textMain  = onDark ? '#e6e6e6' : '#111111';
+        const textMuted = onDark ? '#b0b0b0' : '#555555';
+        const accent    = localStorage.getItem('rac_resume_color') || '#4a90e2';
+        const linkColor = onDark ? lightenHex(accent, 25) : accent;
+        textRules = `
+            .resume, .resume p, .resume li { color: ${textMain} !important; }
+            .resume h1, .resume h3, .resume strong { color: ${textMain} !important; }
+            .resume em { color: ${textMuted} !important; }
+            .resume a { color: ${linkColor} !important; }
+        `;
+    }
+
+    _resumeCustomStyle.textContent =
+        `.resume { ${rules.join(' ')} }` +
+        `.resume .page-break::after { background: ${bg || 'var(--resume-bg-color)'}; }` +
+        textRules;
+}
+
+/**
+ * Initialize background colour picker
+ */
+function initializeBackgroundPicker() {
+    const picker = document.getElementById('resumeBgPicker');
+    if (!picker) return;
+
+    const saved = localStorage.getItem('rac_resume_bg');
+    const isDark = document.body.classList.contains('theme-dark');
+    const initial = saved || (isDark ? '#121212' : '#ffffff');
+
+    picker.value = initial;
+    document.documentElement.style.setProperty('--resume-bg-color', initial);
+    const bgDot = document.getElementById('resumeBgDot');
+    if (bgDot) bgDot.style.background = initial;
+    if (saved) flushResumeCustomStyle();
+
+    picker.addEventListener('input', (e) => {
+        const val = e.target.value;
+        document.documentElement.style.setProperty('--resume-bg-color', val);
+        localStorage.setItem('rac_resume_bg', val);
+        if (bgDot) bgDot.style.background = val;
+        flushResumeCustomStyle();
+    });
+}
+
+/**
+ * Initialize font-family selector
+ */
+function initializeFontSelector() {
+    const select = document.getElementById('resumeFontSelect');
+    if (!select) return;
+
+    const saved = localStorage.getItem('rac_resume_font');
+    if (saved) {
+        select.value = saved;
+        document.documentElement.style.setProperty('--resume-font-family', saved);
+        flushResumeCustomStyle();
+    }
+
+    select.addEventListener('change', (e) => {
+        const val = e.target.value;
+        document.documentElement.style.setProperty('--resume-font-family', val);
+        localStorage.setItem('rac_resume_font', val);
+        flushResumeCustomStyle();
+    });
+}
+
+/**
  * Initialize resume color picker input and load saved resume color.
  * This ensures changing the resume accent does NOT affect app chrome/buttons.
  * Also clears a legacy global color key if present so older stored values
@@ -444,10 +755,13 @@ function initializeColorPicker() {
     picker.value = current;
     picker.title = 'Resume accent color';
     applyResumeColor(current);
+    const accentDot = document.getElementById('primaryColorDot');
+    if (accentDot) accentDot.style.background = current;
     picker.addEventListener('input', (e) => {
         const val = e.target.value;
         applyResumeColor(val);
         localStorage.setItem('rac_resume_color', val);
+        if (accentDot) accentDot.style.background = val;
     });
 }
 

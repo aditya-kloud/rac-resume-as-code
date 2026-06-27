@@ -115,73 +115,102 @@ Personal portfolio showcasing web development projects with modern design and sm
 
     devops: `\\documentclass[11pt,a4paper]{article}
 
+% ═══════════════════════════════════════════════════════════════
+%  RaC — Resume as Code  |  Feature Showcase Template
+%  This file demonstrates every command this tool understands.
+%  Replace placeholder text with your own content.
+% ═══════════════════════════════════════════════════════════════
+
 \\usepackage[left=1.6cm,right=1.6cm,top=1.5cm,bottom=1.5cm]{geometry}
 \\usepackage{titlesec}
 \\usepackage{enumitem}
 \\usepackage[hidelinks]{hyperref}
 \\usepackage{xcolor}
 
-\\definecolor{heading}{RGB}{0,0,0}
-\\titleformat{\\section}{\\large\\bfseries\\color{heading}}{}{0em}{}[\\titlerule]
-
+\\titleformat{\\section}{\\large\\bfseries}{}{0em}{}[\\titlerule]
 \\setlist[itemize]{noitemsep, topsep=3pt, leftmargin=*}
 \\setlength{\\parindent}{0pt}
 
 \\begin{document}
 
+% ── 1. HEADER — centered name, title, contact links ─────────────
 \\begin{center}
-    {\\LARGE \\textbf{YOUR NAME}}\\\\
+    {\\LARGE \\textbf{Your Name}}\\\\
     \\vspace{4pt}
-    \\textbf{Senior DevOps / Platform Engineer | Cloud \\& SRE Specialist}\\\\
+    {\\large Job Title | Specialisation}\\\\
     \\vspace{6pt}
-    \\href{mailto:your@email.com}{your@email.com} \\;|\\;
-    +91-XXXXXXXXXX \\;|\\;
-    \\href{https://linkedin.com/in/yourprofile}{linkedin.com/in/yourprofile} \\;|\\;
-    \\href{https://github.com/yourgithub}{github.com/yourgithub}
+    \\href{mailto:you@email.com}{you@email.com} \\;|\\;
+    +00-0000000000 \\;|\\;
+    \\href{https://linkedin.com/in/you}{linkedin.com/in/you} \\;|\\;
+    \\href{https://github.com/you}{github.com/you}
 \\end{center}
 
 \\vspace{6pt}
 
-\\section*{Professional Summary}
-Senior DevOps Engineer with \\textbf{7+ years of experience} building highly available, secure, and scalable cloud platforms. Strong background in \\textbf{AWS, Kubernetes, Infrastructure as Code, CI/CD, and SRE}. Proven ability to lead platform initiatives, optimize multi-crore cloud spend, and enable engineering teams to ship faster and safer at scale.
+% ── 2. TEXT FORMATTING ──────────────────────────────────────────
+\\section*{Text Formatting}
+\\textbf{Bold} \\quad \\textit{Italic} \\quad \\underline{Underline} \\quad
+\\href{https://example.com}{Hyperlink} \\quad Normal text
 
-\\section*{Technical Expertise}
-\\textbf{Cloud Platforms:} AWS (EKS, EC2, VPC, IAM, RDS, DynamoDB, S3, CloudFront, Route53) \\\\
-\\textbf{Containers \\& Orchestration:} Docker, Kubernetes, Helm, Kustomize, EKS Blueprints \\\\
-\\textbf{Infrastructure as Code:} Terraform, Terragrunt, CloudFormation \\\\
-\\textbf{CI/CD \\& GitOps:} GitHub Actions, Jenkins, GitLab CI, ArgoCD, FluxCD \\\\
-\\textbf{Observability \\& SRE:} Prometheus, Grafana, ELK, Loki, Datadog, Alertmanager \\\\
-\\textbf{Security:} IAM, OIDC, Secrets Manager, Vault, Trivy, Snyk, CIS Benchmarks \\\\
-\\textbf{Languages:} Python, Bash, Go (working knowledge)
-
-\\section*{Professional Experience}
-
-\\textbf{Senior DevOps Engineer / Platform Engineer} \\hfill \\textit{2021 -- Present}\\\\
-\\textbf{Company Name – Product-Based Organization}
+% ── 3. BULLET LIST ─────────────────────────────────────────────
+\\section*{Bullet List}
 \\begin{itemize}
-  \\item Architected and operated a \\textbf{production-grade Kubernetes platform (EKS)} serving \\textbf{50M+ requests/month} across multiple regions.
-  \\item Led migration from monolithic EC2 workloads to \\textbf{microservices-based container architecture}, improving release frequency by \\textbf{4x}.
-  \\item Designed GitOps-driven CI/CD using \\textbf{GitHub Actions + ArgoCD}, enabling fully automated, auditable deployments.
-  \\item Implemented autoscaling (HPA, Cluster Autoscaler, Karpenter), reducing peak infra cost by \\textbf{35\\%}.
-  \\item Established SRE best practices: SLIs, SLOs, error budgets, and on-call runbooks.
+  \\item Plain item
+  \\item Item with \\textbf{bold} and \\textit{italic} inline
+  \\item Item with a \\href{https://example.com}{clickable link}
 \\end{itemize}
 
-\\textbf{DevOps Engineer} \\hfill \\textit{2018 -- 2021}\\\\
-\\textbf{Company Name – SaaS / Services}
+% ── 4. RIGHT-ALIGNED DATES (\\hfill) ────────────────────────────
+\\section*{Right-Aligned Dates  (\\textbackslash hfill)}
+\\textbf{Job Title} \\hfill \\textit{2022 -- Present}\\\\
+Company Name \\hfill \\textit{City, Country}
 \\begin{itemize}
-  \\item Automated provisioning of AWS infrastructure using Terraform and CloudFormation.
-  \\item Built CI/CD pipelines for Java and Node.js services, reducing manual release effort by \\textbf{70\\%}.
-  \\item Implemented centralized logging and monitoring using ELK and Prometheus.
+  \\item \\textbackslash hfill pushes the date to the right margin automatically.
 \\end{itemize}
 
-\\section*{Education}
-\\textbf{B.Tech in Computer Science}\\\\
-University Name \\hfill \\textit{Year}
+% ── 5. FONT SIZES ───────────────────────────────────────────────
+\\section*{Font Sizes}
+{\\LARGE LARGE} \\quad {\\Large Large} \\quad {\\large large} \\quad Normal
 
-\\section*{Certifications}
+% ── 6. VERTICAL SPACING (\\vspace) ──────────────────────────────
+\\section*{Vertical Spacing  (\\textbackslash vspace)}
+Line one.
+\\vspace{10pt}
+Line two — 10 pt gap above via \\textbackslash vspace{10pt}.
+
+% ── 7. PAGE BREAK ───────────────────────────────────────────────
+% \\newpage (or \\pagebreak) forces everything below onto a new page.
+% A dashed "Page Break" bar appears in the preview; it is invisible in the PDF.
+% Move this line up or down to control exactly where the page splits.
+\\newpage
+
+% ── PAGE 2 ──────────────────────────────────────────────────────
+\\section*{Page 2 — After \\textbackslash newpage}
+Content here prints on the second page of the PDF.\\\\
+Move the \\textbf{\\textbackslash newpage} line anywhere to change the split point.
+
+\\vspace{10pt}
+
+\\section*{Numbered List  (enumerate)}
 \\begin{itemize}
-  \\item AWS Certified Solutions Architect – Professional
-  \\item Certified Kubernetes Administrator (CKA)
+  \\item Bullet lists use \\textbf{itemize}
+  \\item Numbered lists use \\textbf{enumerate}
+  \\item Both support inline \\textit{formatting} and \\href{https://example.com}{links}
+\\end{itemize}
+
+\\vspace{6pt}
+
+\\section*{Quick Reference}
+\\begin{itemize}
+  \\item \\textbf{\\textbackslash textbf} — bold text
+  \\item \\textbf{\\textbackslash textit} — italic text
+  \\item \\textbf{\\textbackslash underline} — underline text
+  \\item \\textbf{\\textbackslash href} — hyperlink (url and label as arguments)
+  \\item \\textbf{\\textbackslash hfill} — push following text to right margin
+  \\item \\textbf{\\textbackslash vspace} — add vertical gap
+  \\item \\textbf{\\textbackslash newpage} — page break (dashed line in preview)
+  \\item \\textbf{\\textbackslash section*} — section heading with rule
+  \\item \\textbf{\\textbackslash begin itemize} — bullet list
 \\end{itemize}
 
 \\end{document}`

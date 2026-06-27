@@ -1,77 +1,301 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RaC: Resume as Code</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <!-- CodeMirror for code editing -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
-    <!-- KaTeX for LaTeX rendering -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RaC — Resume as Code | Browser-based LaTeX Resume Editor</title>
+  <meta name="description" content="Write your resume in LaTeX, preview it live, export to PDF. No install, no server, no account required.">
+  <link rel="stylesheet" href="css/landing.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,600;0,14..32,700;0,14..32,800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-left"></div>
-            <h1>RaC — Resume as Code</h1>
-                <div class="header-actions">
-                    <!-- Toggle switch for theme (clean, compact) -->
-                    <label class="switch" title="Toggle dark mode">
-                        <input id="themeToggleBtn" type="checkbox" aria-label="Toggle dark mode">
-                        <span class="switch-slider"></span>
-                    </label>
 
-                    <button id="downloadPdf" class="btn btn-primary">Download</button>
-                </div>
-        </header>
+  <!-- ── Navigation ──────────────────────────────────────────────── -->
+  <nav class="nav" id="nav">
+    <span class="nav-logo">RaC</span>
+    <div class="nav-links">
+      <a href="#how-it-works" class="nav-link">How it works</a>
+      <a href="#prompt"       class="nav-link">Commands</a>
+      <a href="#features"     class="nav-link">Features</a>
+      <a href="app.html"      class="nav-cta">Launch Editor →</a>
+    </div>
+  </nav>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Editor Pane -->
-            <div class="editor-pane">
-                <div class="pane-header">
-                    <h2>LaTeX Editor</h2>
-                    <span class="pane-info">Edit your resume in LaTeX</span>
-                </div>
-                <textarea id="latexEditor"></textarea>
-            </div>
+  <!-- ── Hero ────────────────────────────────────────────────────── -->
+  <section class="hero" id="hero">
+    <div class="hero-aurora" aria-hidden="true"></div>
+    <div class="hero-grid"   aria-hidden="true"></div>
 
-            <!-- Divider -->
-            <div class="divider"></div>
-
-            <!-- Preview Pane -->
-            <div class="preview-pane">
-                <div class="pane-header">
-                    <div id="compileStatus" class="compile-status"></div>
-                    <div class="pane-controls">
-                        <label for="primaryColorPicker" style="display:flex; align-items:center; gap:0.5rem; margin-right:0.5rem;">
-                            <input id="primaryColorPicker" type="color" title="Resume accent color">
-                        </label>
-                        <button id="saveRecompileBtn" class="btn btn-primary">Recompile</button>
-                    </div>
-                </div>
-                <div id="preview" class="preview-content"></div>
-                <div id="error" class="error-message"></div>
-            </div>
-        </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <p>RaC: Resume as Code | © 2026</p>
-        </footer>
+    <div class="hero-content">
+      <div class="hero-label">Open Source · MIT License</div>
+      <h1 class="hero-title">
+        Your resume.<br>
+        <span class="hero-accent">As code.</span>
+      </h1>
+      <p class="hero-sub">
+        Write LaTeX in your browser. Preview live. Export a pixel-perfect PDF.
+        No install, no server, no account — ever.
+      </p>
+      <div class="hero-actions">
+        <a href="app.html" class="btn-cta">Launch Editor →</a>
+        <a href="#how-it-works" class="btn-cta-outline">See how it works</a>
+      </div>
+      <div class="hero-badges">
+        <span class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          Runs 100% in your browser
+        </span>
+        <span class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          Data never leaves your machine
+        </span>
+        <span class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          No sign-up required
+        </span>
+      </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/stex/stex.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="js/templates.js?t=1738614687"></script>
-    <script src="js/latex-renderer.js?t=1738614687"></script>
-    <script src="js/app.js?t=1738614687"></script>
+    <div class="hero-visual" aria-hidden="true">
+      <!-- Editor mockup floating behind -->
+      <div class="editor-mockup">
+        <div class="em-line"><span class="em-blue">\documentclass</span><span>{article}</span></div>
+        <div class="em-line em-dimmed">\usepackage{geometry}</div>
+        <div class="em-line em-dimmed">&nbsp;</div>
+        <div class="em-line"><span class="em-blue">\begin</span>{document}</div>
+        <div class="em-line em-dimmed">&nbsp;</div>
+        <div class="em-line"><span class="em-green">\begin</span>{center}</div>
+        <div class="em-line">&nbsp;&nbsp;{\LARGE <span class="em-blue">\textbf</span>{Jane Smith}}</div>
+        <div class="em-line em-dimmed">&nbsp;&nbsp;\vspace{4pt}</div>
+        <div class="em-line"><span class="em-green">\end</span>{center}</div>
+        <div class="em-line em-dimmed">&nbsp;</div>
+        <div class="em-line"><span class="em-blue">\section*</span>{Experience}</div>
+        <div class="em-line"><span class="em-blue">\textbf</span>{Engineer} <span class="em-green">\hfill</span> 2022--</div>
+        <div class="em-line"><span class="em-blue">\begin</span>{itemize}</div>
+        <div class="em-line em-dimmed">&nbsp;&nbsp;\item Led platform redesign</div>
+      </div>
+
+      <!-- 3D floating resume card -->
+      <div class="resume-card-3d">
+        <div class="rc-header">
+          <div class="rc-name"></div>
+          <div class="rc-role"></div>
+          <div class="rc-contact">
+            <div class="rc-dot"></div>
+            <div class="rc-dot"></div>
+            <div class="rc-dot"></div>
+            <div class="rc-dot"></div>
+          </div>
+        </div>
+        <div class="rc-divider"></div>
+        <div class="rc-section-label"></div>
+        <div class="rc-line rc-line-w90"></div>
+        <div class="rc-line rc-line-w75"></div>
+        <div class="rc-line rc-line-w60"></div>
+        <div class="rc-divider"></div>
+        <div class="rc-section-label"></div>
+        <div class="rc-line rc-line-w90"></div>
+        <div class="rc-line rc-line-w45"></div>
+        <div class="rc-chips">
+          <span class="rc-chip">Python</span>
+          <span class="rc-chip">Docker</span>
+          <span class="rc-chip">AWS</span>
+          <span class="rc-chip">K8s</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── How it Works ─────────────────────────────────────────────── -->
+  <section class="how-it-works section-pad section-fade" id="how-it-works">
+    <h2 class="section-title">How it works</h2>
+    <p class="section-sub">From a prompt to a polished PDF in four steps.</p>
+
+    <div class="steps-row">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Generate LaTeX from AI</h3>
+        <p>Ask ChatGPT, Claude, or Gemini to write your resume in LaTeX. Use the supported commands reference below for best results.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Paste into Editor</h3>
+        <p>Copy the generated LaTeX and paste it into the RaC editor. The live preview renders it instantly — no compile needed.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Edit &amp; Style</h3>
+        <p>Tweak content directly in the editor. Switch colour presets, change the font, and use page boundary guides to fine-tune layout.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <h3>Download PDF</h3>
+        <p>Click Download PDF. Get a pixel-perfect A4 PDF with full-bleed colours and proper margins — ready to send.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Prompt + Supported Commands ─────────────────────────────── -->
+  <section class="prompt-section section-pad section-fade" id="prompt">
+
+    <div class="prompt-layout">
+
+      <!-- Left: prompt card -->
+      <div class="prompt-left">
+        <div class="prompt-eyebrow">Get your LaTeX</div>
+        <h2 class="prompt-title">Give this prompt<br>to any AI agent</h2>
+        <p class="prompt-desc">Copy the prompt below, paste it into ChatGPT, Claude, or Gemini with your details, and get a ready-to-use LaTeX resume in seconds.</p>
+        <div class="prompt-box">
+          <div class="prompt-box-header">
+            <span class="prompt-box-label">Prompt</span>
+            <button class="prompt-copy-btn" id="promptCopyBtn">Copy</button>
+          </div>
+          <div class="prompt-box-text" id="promptText">Write a professional LaTeX resume using \documentclass[11pt,a4paper]{article}. Use \section*{} for headings, \textbf{} for bold, \textit{} for italic, \hfill for right-aligned dates, \begin{itemize} for bullet points, and \newpage for page breaks. Include sections for Summary, Experience, Skills, and Education. My details: [paste your info here]</div>
+        </div>
+      </div>
+
+      <!-- Right: supported commands reference -->
+      <div class="prompt-right">
+        <div class="prompt-eyebrow">Supported LaTeX commands</div>
+        <p class="prompt-ref-sub">Tell the AI to use only these — RaC renders all of them perfectly.</p>
+        <div class="cmd-grid">
+
+          <div class="cmd-group">
+            <div class="cmd-group-label">Structure</div>
+            <div class="cmd-row"><code>\section*{Title}</code><span>Section heading with rule</span></div>
+            <div class="cmd-row"><code>\begin{itemize}</code><span>Bullet list</span></div>
+            <div class="cmd-row"><code>\item</code><span>List item</span></div>
+            <div class="cmd-row"><code>\begin{center}</code><span>Centered block</span></div>
+          </div>
+
+          <div class="cmd-group">
+            <div class="cmd-group-label">Formatting</div>
+            <div class="cmd-row"><code>\textbf{}</code><span>Bold text</span></div>
+            <div class="cmd-row"><code>\textit{}</code><span>Italic text</span></div>
+            <div class="cmd-row"><code>\underline{}</code><span>Underline</span></div>
+            <div class="cmd-row"><code>\href{url}{label}</code><span>Hyperlink</span></div>
+          </div>
+
+          <div class="cmd-group">
+            <div class="cmd-group-label">Layout</div>
+            <div class="cmd-row"><code>\hfill</code><span>Push date to right margin</span></div>
+            <div class="cmd-row"><code>\vspace{10pt}</code><span>Vertical gap</span></div>
+            <div class="cmd-row"><code>\newpage</code><span>Page break</span></div>
+            <div class="cmd-row"><code>\\</code><span>Line break</span></div>
+          </div>
+
+          <div class="cmd-group">
+            <div class="cmd-group-label">Font Sizes</div>
+            <div class="cmd-row"><code>{\LARGE …}</code><span>Large heading</span></div>
+            <div class="cmd-row"><code>{\Large …}</code><span>Medium heading</span></div>
+            <div class="cmd-row"><code>{\large …}</code><span>Slightly larger</span></div>
+            <div class="cmd-row"><code>$…$</code><span>Inline math (KaTeX)</span></div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Features ─────────────────────────────────────────────────── -->
+  <section class="features section-pad section-fade" id="features">
+    <h2 class="section-title">Everything you need</h2>
+    <p class="section-sub">A complete resume workflow built into one browser tab.</p>
+
+    <div class="features-grid features-grid--3">
+
+      <div class="feature-card feature-card--blue" data-tilt>
+        <div class="feature-icon fi-blue">⚡</div>
+        <h3>Live Preview &amp; PDF Export</h3>
+        <p>Your resume renders in real-time as you type. One click exports a pixel-perfect A4 PDF — full-bleed colours, proper margins, no surprises.</p>
+        <div class="feature-visual">
+          <div class="fv-preview">
+            <div class="fv-bar fv-bar--accent"></div>
+            <div class="fv-bar fv-bar--w80"></div>
+            <div class="fv-bar fv-bar--w65"></div>
+            <div class="fv-bar fv-bar--w50"></div>
+          </div>
+          <div class="fv-pdf-badge">⬇ A4 PDF · Full-bleed</div>
+        </div>
+      </div>
+
+      <div class="feature-card feature-card--violet" data-tilt>
+        <div class="feature-icon fi-violet">🎨</div>
+        <h3>8 Colour Schemes</h3>
+        <p>Switch between Classic, Dark, Warm, Forest, Slate, Minimal, Rose, and Violet in one click — or set your own accent and background colour.</p>
+        <div class="feature-swatches">
+          <span class="fswatch" style="background:linear-gradient(135deg,#ffffff 50%,#4a90e2 50%)" title="Classic"></span>
+          <span class="fswatch" style="background:linear-gradient(135deg,#121212 50%,#4a90e2 50%)" title="Dark"></span>
+          <span class="fswatch" style="background:linear-gradient(135deg,#fdf8f0 50%,#c8763a 50%)" title="Warm"></span>
+          <span class="fswatch" style="background:linear-gradient(135deg,#f0f7f2 50%,#2d6a4f 50%)" title="Forest"></span>
+          <span class="fswatch" style="background:linear-gradient(135deg,#1e2a3a 50%,#64b5f6 50%)" title="Slate"></span>
+          <span class="fswatch" style="background:linear-gradient(135deg,#ffffff 50%,#555555 50%)" title="Minimal"></span>
+          <span class="fswatch" style="background:linear-gradient(135deg,#fff5f5 50%,#c0392b 50%)" title="Rose"></span>
+          <span class="fswatch" style="background:linear-gradient(135deg,#f7f0ff 50%,#7f5af0 50%)" title="Violet"></span>
+        </div>
+      </div>
+
+      <div class="feature-card feature-card--green" data-tilt>
+        <div class="feature-icon fi-green">✏️</div>
+        <h3>Full LaTeX Syntax</h3>
+        <p>Supports <code>\documentclass</code>, <code>\hfill</code> date alignment, <code>\newpage</code>, itemize, font sizes, math via KaTeX, and auto-save to localStorage.</p>
+        <div class="feature-visual">
+          <div class="fv-code">
+            <div><span class="kw">\section*</span><span class="str">{Experience}</span></div>
+            <div><span class="kw">\textbf</span><span class="str">{Engineer}</span> <span class="fn">\hfill</span> <span class="str">2022--</span></div>
+            <div><span class="kw">\begin</span><span class="str">{itemize}</span></div>
+            <div>&nbsp;&nbsp;<span class="fn">\item</span> Led platform redesign</div>
+            <div><span class="kw">\newpage</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Promise / CTA ─────────────────────────────────────────────── -->
+  <section class="promise section-pad section-fade" id="promise">
+    <div class="promise-inner">
+      <div class="promise-badge">✓ 100% client-side</div>
+      <h2 class="promise-title">
+        No install. No server.<br>No account. Just write.
+      </h2>
+      <p class="promise-sub">
+        Everything runs in your browser. Your resume data never leaves your machine.
+        Close the tab and come back — it's all still there.
+      </p>
+      <a href="app.html" class="btn-cta">Start writing now →</a>
+      <div class="promise-tech">
+        <span class="tech-badge">Powered by CodeMirror</span>
+        <span class="tech-badge-dot"></span>
+        <span class="tech-badge">KaTeX math rendering</span>
+        <span class="tech-badge-dot"></span>
+        <span class="tech-badge">Browser Print API</span>
+        <span class="tech-badge-dot"></span>
+        <span class="tech-badge">Zero dependencies</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ────────────────────────────────────────────────────── -->
+  <footer class="footer">
+    <span class="footer-logo">RaC</span>
+    <span>Resume as Code · MIT License · © 2026 · Made by Aditya Kumar</span>
+    <div class="footer-links">
+      <a href="app.html"                                             class="footer-link">Launch Editor</a>
+      <a href="https://github.com/darksoul03/devops_resumeMaker"
+         target="_blank" rel="noopener"                             class="footer-link">GitHub ↗</a>
+      <a href="README.md"                                            class="footer-link">Docs</a>
+    </div>
+  </footer>
+
+  <script src="js/landing.js"></script>
 </body>
 </html>
