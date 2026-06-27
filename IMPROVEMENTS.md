@@ -4,6 +4,24 @@ A running log of bugs fixed and features added since the initial release.
 
 ---
 
+## v1.2.2 — Tablet & PDF Layout Fixes
+
+### Bug Fixes
+
+**Preview pane controls overflowing on tablet**
+- On tablet viewports (769px–1100px) the panes stay side-by-side, but each pane was too narrow to fit the compile-status chip and four buttons (Presets, Style, Reset, Recompile) on one row — the Recompile button was clipped.
+- Fixed with a dedicated mid-range breakpoint: compile status takes its own full-width row, and all four buttons share the row below with `flex: 1`.
+
+**Download PDF button wrapping to second row on mobile**
+- On small screens, the 3-item header (← Home, title, Download PDF) didn't fit on one row, pushing the button below the title.
+- Fixed by reordering with flexbox: ← Home and Download PDF share the top row, title drops to a full-width second row.
+
+**White side margins in PDF on dark colour schemes**
+- Dark-background resumes (Slate, Dark, Violet) showed white strips on the left and right in exported PDFs because Chrome does not reliably paint `background-color` on the body's padding area during print.
+- Fixed by removing padding from `body` in the print stylesheet and moving it to `#pdf-wrap` (a regular `div`). Also added `print-color-adjust: exact !important` explicitly to `html` and `body`.
+
+---
+
 ## v1.2.1 — PDF, Presets & Editor Controls
 
 ### Bug Fixes
@@ -20,6 +38,10 @@ A running log of bugs fixed and features added since the initial release.
 **Reset not resetting the editor**
 - The Reset button only reset colours and font, leaving the editor content unchanged.
 - Fixed to also restore the default template and clear `latexContent` from localStorage (with confirmation prompt).
+
+**Classic preset not applied on first load**
+- On a brand-new visit (no `rac_resume_bg` in `localStorage`), the resume preview rendered with no background colour, appearing transparent/dark.
+- Fixed by explicitly seeding `localStorage` with the Classic preset (`#ffffff` / `#4a90e2`) in `applyTheme()` when no stored value is found, so the first load always looks correct.
 
 ### New Features
 
